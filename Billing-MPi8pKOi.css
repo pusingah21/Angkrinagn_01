@@ -1,0 +1,1 @@
+.chilipiper-frame{transition:opacity var(--duration-slow,.26s) var(--ease-out,ease-out)}html.chilipiper-preloading .chilipiper-frame{opacity:0;pointer-events:none}.chilipiper-booking-loader{z-index:99998}@media (prefers-reduced-motion:reduce){.chilipiper-frame{transition:none}}

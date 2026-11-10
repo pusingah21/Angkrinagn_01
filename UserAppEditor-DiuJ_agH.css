@@ -1,0 +1,1 @@
+.preview-section-frame{container-type:inline-size}@container (width<=48rem){.preview-section-frame-side{display:none}}:is(html:has([data-chat-resize-handle][data-panel-resize-handle-enabled=true]:hover) *,html:has([data-chat-resize-handle][data-resize-handle-state=drag]) *){cursor:col-resize!important}

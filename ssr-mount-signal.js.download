@@ -1,0 +1,30 @@
+// A server-rendered page hydrates in place and never mutates the DOM, so the
+// mount observer's MutationObserver never fires for it. The instrumented markup
+// in the server's HTML is the mount, so it is reported as soon as the document
+// is parsed — before hydration; a hydration error reaches the editor through the
+// unhandled-error handlers. Streamed markup that lands later is caught by the
+// `load` retry, or by the observer, which parser insertions do trigger.
+export function reportSsrMount(win = window, doc = document) {
+    if (win.self === win.top)
+        return;
+    const report = () => {
+        if (!doc.body.querySelector("[data-source-location], [data-dynamic-content]"))
+            return false;
+        win.parent?.postMessage({ type: "sandbox:onMounted" }, "*");
+        return true;
+    };
+    const reportOrRetryOnLoad = () => {
+        if (!report())
+            win.addEventListener("load", () => void report(), { once: true });
+    };
+    if (doc.readyState === "loading") {
+        doc.addEventListener("DOMContentLoaded", reportOrRetryOnLoad, { once: true });
+    }
+    else {
+        reportOrRetryOnLoad();
+    }
+}
+if (typeof window !== "undefined")
+    reportSsrMount();
+                                            
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic3NyLW1vdW50LXNpZ25hbC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9pbmplY3Rpb25zL3Nzci1tb3VudC1zaWduYWwudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsNkVBQTZFO0FBQzdFLGdGQUFnRjtBQUNoRiwrRUFBK0U7QUFDL0UsaUZBQWlGO0FBQ2pGLDhFQUE4RTtBQUM5RSx3RUFBd0U7QUFDeEUsTUFBTSxVQUFVLGNBQWMsQ0FBQyxNQUFjLE1BQU0sRUFBRSxNQUFnQixRQUFRO0lBQzNFLElBQUksR0FBRyxDQUFDLElBQUksS0FBSyxHQUFHLENBQUMsR0FBRztRQUFFLE9BQU87SUFDakMsTUFBTSxNQUFNLEdBQUcsR0FBWSxFQUFFO1FBQzNCLElBQUksQ0FBQyxHQUFHLENBQUMsSUFBSSxDQUFDLGFBQWEsQ0FBQyxnREFBZ0QsQ0FBQztZQUFFLE9BQU8sS0FBSyxDQUFDO1FBQzVGLEdBQUcsQ0FBQyxNQUFNLEVBQUUsV0FBVyxDQUFDLEVBQUUsSUFBSSxFQUFFLG1CQUFtQixFQUFFLEVBQUUsR0FBRyxDQUFDLENBQUM7UUFDNUQsT0FBTyxJQUFJLENBQUM7SUFDZCxDQUFDLENBQUM7SUFDRixNQUFNLG1CQUFtQixHQUFHLEdBQUcsRUFBRTtRQUMvQixJQUFJLENBQUMsTUFBTSxFQUFFO1lBQUUsR0FBRyxDQUFDLGdCQUFnQixDQUFDLE1BQU0sRUFBRSxHQUFHLEVBQUUsQ0FBQyxLQUFLLE1BQU0sRUFBRSxFQUFFLEVBQUUsSUFBSSxFQUFFLElBQUksRUFBRSxDQUFDLENBQUM7SUFDbkYsQ0FBQyxDQUFDO0lBQ0YsSUFBSSxHQUFHLENBQUMsVUFBVSxLQUFLLFNBQVMsRUFBRSxDQUFDO1FBQ2pDLEdBQUcsQ0FBQyxnQkFBZ0IsQ0FBQyxrQkFBa0IsRUFBRSxtQkFBbUIsRUFBRSxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsQ0FBQyxDQUFDO0lBQ2hGLENBQUM7U0FBTSxDQUFDO1FBQ04sbUJBQW1CLEVBQUUsQ0FBQztJQUN4QixDQUFDO0FBQ0gsQ0FBQztBQUVELElBQUksT0FBTyxNQUFNLEtBQUssV0FBVztJQUFFLGNBQWMsRUFBRSxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiLy8gQSBzZXJ2ZXItcmVuZGVyZWQgcGFnZSBoeWRyYXRlcyBpbiBwbGFjZSBhbmQgbmV2ZXIgbXV0YXRlcyB0aGUgRE9NLCBzbyB0aGVcbi8vIG1vdW50IG9ic2VydmVyJ3MgTXV0YXRpb25PYnNlcnZlciBuZXZlciBmaXJlcyBmb3IgaXQuIFRoZSBpbnN0cnVtZW50ZWQgbWFya3VwXG4vLyBpbiB0aGUgc2VydmVyJ3MgSFRNTCBpcyB0aGUgbW91bnQsIHNvIGl0IGlzIHJlcG9ydGVkIGFzIHNvb24gYXMgdGhlIGRvY3VtZW50XG4vLyBpcyBwYXJzZWQg4oCUIGJlZm9yZSBoeWRyYXRpb247IGEgaHlkcmF0aW9uIGVycm9yIHJlYWNoZXMgdGhlIGVkaXRvciB0aHJvdWdoIHRoZVxuLy8gdW5oYW5kbGVkLWVycm9yIGhhbmRsZXJzLiBTdHJlYW1lZCBtYXJrdXAgdGhhdCBsYW5kcyBsYXRlciBpcyBjYXVnaHQgYnkgdGhlXG4vLyBgbG9hZGAgcmV0cnksIG9yIGJ5IHRoZSBvYnNlcnZlciwgd2hpY2ggcGFyc2VyIGluc2VydGlvbnMgZG8gdHJpZ2dlci5cbmV4cG9ydCBmdW5jdGlvbiByZXBvcnRTc3JNb3VudCh3aW46IFdpbmRvdyA9IHdpbmRvdywgZG9jOiBEb2N1bWVudCA9IGRvY3VtZW50KTogdm9pZCB7XG4gIGlmICh3aW4uc2VsZiA9PT0gd2luLnRvcCkgcmV0dXJuO1xuICBjb25zdCByZXBvcnQgPSAoKTogYm9vbGVhbiA9PiB7XG4gICAgaWYgKCFkb2MuYm9keS5xdWVyeVNlbGVjdG9yKFwiW2RhdGEtc291cmNlLWxvY2F0aW9uXSwgW2RhdGEtZHluYW1pYy1jb250ZW50XVwiKSkgcmV0dXJuIGZhbHNlO1xuICAgIHdpbi5wYXJlbnQ/LnBvc3RNZXNzYWdlKHsgdHlwZTogXCJzYW5kYm94Om9uTW91bnRlZFwiIH0sIFwiKlwiKTtcbiAgICByZXR1cm4gdHJ1ZTtcbiAgfTtcbiAgY29uc3QgcmVwb3J0T3JSZXRyeU9uTG9hZCA9ICgpID0+IHtcbiAgICBpZiAoIXJlcG9ydCgpKSB3aW4uYWRkRXZlbnRMaXN0ZW5lcihcImxvYWRcIiwgKCkgPT4gdm9pZCByZXBvcnQoKSwgeyBvbmNlOiB0cnVlIH0pO1xuICB9O1xuICBpZiAoZG9jLnJlYWR5U3RhdGUgPT09IFwibG9hZGluZ1wiKSB7XG4gICAgZG9jLmFkZEV2ZW50TGlzdGVuZXIoXCJET01Db250ZW50TG9hZGVkXCIsIHJlcG9ydE9yUmV0cnlPbkxvYWQsIHsgb25jZTogdHJ1ZSB9KTtcbiAgfSBlbHNlIHtcbiAgICByZXBvcnRPclJldHJ5T25Mb2FkKCk7XG4gIH1cbn1cblxuaWYgKHR5cGVvZiB3aW5kb3cgIT09IFwidW5kZWZpbmVkXCIpIHJlcG9ydFNzck1vdW50KCk7XG4iXSwieF9nb29nbGVfaWdub3JlTGlzdCI6WzBdfQ==
